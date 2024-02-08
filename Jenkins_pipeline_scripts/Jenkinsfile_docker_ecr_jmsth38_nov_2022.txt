@@ -1,0 +1,47 @@
+pipeline {
+   agent any
+   environment 
+    {
+        VERSION = "${BUILD_NUMBER}"
+        PROJECT = 'javatestpipeline'
+        ECRURL = 'https://034673175192.dkr.ecr.ap-south-1.amazonaws.com/javatestpipeline'
+        ECRCRED = 'ecr:ap-south-1:aws_credentails'
+		dockerImage = ''
+		 
+    }   
+    stages {
+      stage('GetSCM') {
+
+         steps {
+
+            // Get some code from a GitHub repository
+            git credentialsId: 'github_credentials', url: 'https://github.com/jmstechhome19/hello-world-java.git'
+         }
+         }
+         stage('build'){
+             steps{
+                 script{
+                       dockerImage = docker.build("$PROJECT:${env.BUILD_NUMBER}") 
+					   
+                 }
+             }
+         }
+		 stage('Push Image'){
+         steps{
+             script
+                {
+                    docker.withRegistry(ECRURL, ECRCRED)
+                    {
+                         dockerImage.push()
+                    }
+                }
+            }
+         }
+       stage('remove image'){
+         steps{
+            sh "docker rmi  $PROJECT:${env.BUILD_NUMBER} "
+        }
+    }
+	}
+	
+}

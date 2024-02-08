@@ -1,0 +1,55 @@
+pipeline {
+   agent any
+   environment 
+    {
+        VERSION = "${BUILD_NUMBER}"
+        PROJECT = 'spring_pipeline'
+        IMAGE = "$PROJECT:$VERSION"
+        ECRURL = 'https://849846292328.dkr.ecr.ap-south-1.amazonaws.com/spring_pipeline'
+        ECRCRED = 'ecr:ap-south-1:aws_credentials'
+    }   
+    stages {
+      stage('GetSCM') {
+
+         steps {
+
+            // Get some code from a GitHub repository
+            git url: 'https://github.com/jmstechhome18/spring3-mvc-maven-xml-hello-world.git'
+         }
+         }
+      stage('build'){
+             
+             steps{
+                 sh 'mvn package'
+             }
+         }
+      stage('Image Build'){
+             steps{
+                 script{
+                       sh "docker build -t $IMAGE ."
+                 }
+             }
+         }
+    stage('Push Image'){
+         steps{
+             script
+                {
+                    docker.withRegistry(ECRURL, ECRCRED)
+                    {
+                        docker.image(IMAGE).push()
+                    }
+                }
+            }
+         }
+      stage('running_app'){
+             steps{
+                 script{
+                       sh "docker rm -f springapp"
+                       sh "docker run -d -p 8081:8080 --name springapp $IMAGE"
+                 }
+             }
+         }
+         
+    }
+    
+}

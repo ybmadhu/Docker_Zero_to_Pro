@@ -1,0 +1,75 @@
+pipeline {
+   agent any
+     environment {
+    registry = "ybmsr/jmsth32_7am_jenkins_maven_pipeline"
+    registryCredential = 'dockerhub_credentials'
+    dockerImage = ''
+  }
+
+   tools {
+      // Install the Maven version configured as "M3" and add it to the path.
+      maven "maven3"
+   }
+
+   stages {
+      stage('getscm') {
+         steps {
+            git credentialsId: 'github_credentials', url: 'https://github.com/jmstechhome12/spring3-mvc-maven-xml-hello-world.git'
+         }
+      }
+         
+    stage('build'){
+             
+             steps{
+                  
+            sh "mvn package"
+             }
+         }
+    stage('Building image') {
+      steps{
+        script {
+          dockerImage = docker.build registry + ":$BUILD_NUMBER"
+        }
+      }
+    }
+    stage('push image') {
+      steps{
+        script {
+          docker.withRegistry( '', registryCredential ) {
+            dockerImage.push()
+          }
+        }
+      }
+    }
+    stage('Remove old docker image') {
+      steps{
+        sh "docker rmi $registry:$BUILD_NUMBER"
+      }
+    }
+  }
+
+ }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

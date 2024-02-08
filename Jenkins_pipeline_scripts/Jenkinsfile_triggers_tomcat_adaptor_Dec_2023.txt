@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+
+    tools {
+        maven "maven3"
+    }
+    triggers {
+        pollSCM '*/1 * * * *'
+    }
+    stages {
+        stage('git clone') {
+            steps {
+                  git credentialsId: 'github_credentials_token', url: 'https://github.com/jmstechhome25/spring3-mvc-maven-xml-hello-world.git'
+                  }
+                 }
+        stage('build') {
+            steps {
+                sh "mvn clean package"
+
+            }
+        }
+		stage('deploy'){
+		steps{
+		deploy adapters: [tomcat8(credentialsId: 'tomcat9_credentails', path: '', url: 'http://ec2-13-232-191-185.ap-south-1.compute.amazonaws.com:8080/')], contextPath: 'spring3-pipeline', onFailure: false, war: '**/target/*.war'
+
+		}
+	  }
+    }
+}
